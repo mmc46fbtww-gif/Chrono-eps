@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chrono EPS">
+<title>Chrono EPS</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;background:#f2f2f7;color:#111;min-height:100vh}
+main{max-width:520px;margin:auto;padding:24px 18px 32px}
+h1{text-align:center;font-size:34px;margin:10px 0 22px}
+.card{background:white;border-radius:22px;padding:18px;margin-bottom:16px;box-shadow:0 2px 12px #00000012}
+.label{text-align:center;font-size:15px;color:#666;margin-bottom:10px}
+.distances{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+button{border:0;border-radius:14px;padding:13px 5px;font-size:17px;font-weight:650;background:#e5e5ea;color:#111}
+button.selected{background:#111;color:white}
+.timer{text-align:center;font-variant-numeric:tabular-nums;font-size:58px;font-weight:700;letter-spacing:-2px;padding:18px 0 8px}
+.speed{text-align:center;font-size:30px;font-weight:700;margin-bottom:4px}
+.unit{text-align:center;color:#666;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.start{background:#1d9b52;color:white;font-size:22px;padding:18px}
+.stop{background:#d92727;color:white;font-size:22px;padding:18px}
+.reset{width:100%;margin-top:12px;background:#e5e5ea}
+.status{text-align:center;color:#666;min-height:22px;margin-top:10px}
+.info{text-align:center;color:#777;font-size:13px;line-height:1.4}
+</style>
+</head>
+<body>
+<main>
+<h1>🏃 Chrono EPS</h1>
+<div class="card">
+  <div class="label">Choisis la distance</div>
+  <div class="distances">
+    <button onclick="setDistance(140)" id="d140">140 m</button>
+    <button onclick="setDistance(280)" id="d280">280 m</button>
+    <button onclick="setDistance(420)" id="d420">420 m</button>
+    <button onclick="setDistance(560)" id="d560">560 m</button>
+    <button onclick="setDistance(700)" id="d700">700 m</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="label" id="distanceLabel">Distance : 140 m</div>
+  <div class="timer" id="timer">00:00,00</div>
+  <div class="speed" id="speed">— km/h</div>
+  <div class="unit">vitesse moyenne</div>
+  <div class="controls">
+    <button class="start" onclick="start()">▶ START</button>
+    <button class="stop" onclick="stop()">⏹ STOP</button>
+  </div>
+  <button class="reset" onclick="reset()">↻ Nouveau chrono</button>
+  <div class="status" id="status">Prêt</div>
+</div>
+
+<div class="card info">
+  La vitesse moyenne est calculée automatiquement à partir du temps et de la distance.<br>
+  Formule : distance ÷ temps × 3,6.
+</div>
+</main>
+
+<script>
+let distance=140, startTime=null, raf=null, elapsed=0, running=false;
+const $=id=>document.getElementById(id);
+
+function setDistance(d){
+  if(running) return;
+  distance=d;
+  document.querySelectorAll('.distances button').forEach(b=>b.classList.remove('selected'));
+  $('d'+d).classList.add('selected');
+  $('distanceLabel').textContent='Distance : '+d+' m';
+  reset();
+}
+function formatTime(ms){
+  let cs=Math.floor(ms/10)%100, sec=Math.floor(ms/1000)%60, min=Math.floor(ms/60000);
+  return String(min).padStart(2,'0')+':'+String(sec).padStart(2,'0')+','+String(cs).padStart(2,'0');
+}
+function tick(){
+  if(!running)return;
+  elapsed=performance.now()-startTime;
+  $('timer').textContent=formatTime(elapsed);
+  raf=requestAnimationFrame(tick);
+}
+function start(){
+  if(running)return;
+  startTime=performance.now()-elapsed;
+  running=true;
+  $('status').textContent='Chrono en cours…';
+  tick();
+}
+function stop(){
+  if(!running)return;
+  elapsed=performance.now()-startTime;
+  running=false;
+  cancelAnimationFrame(raf);
+  $('timer').textContent=formatTime(elapsed);
+  let seconds=elapsed/1000;
+  let kmh=(distance/seconds)*3.6;
+  $('speed').textContent=kmh.toFixed(2).replace('.',',')+' km/h';
+  $('status').textContent='Terminé';
+}
+function reset(){
+  running=false;
+  cancelAnimationFrame(raf);
+  elapsed=0;
+  $('timer').textContent='00:00,00';
+  $('speed').textContent='— km/h';
+  $('status').textContent='Prêt';
+}
+setDistance(140);
+</script>
+</body>
+</html>
